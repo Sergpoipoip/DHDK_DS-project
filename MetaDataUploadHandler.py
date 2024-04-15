@@ -27,6 +27,24 @@ class ProcessDataUploadHandler(UploadHandler):
     def __init__(self):
         super().__init__()
 
+    def pushDataToDb(self, path: str):
+        try:
+            length_activity = 0
+            try:
+                with sq.connect(self.getDbPathOrUrl()) as con:
+                    q1="SELECT * FROM acquisition;" 
+                    q1_table = pd.read_sql(q1, con)
+                    length_activity = len(q1_table)
+            except:
+                pass
+
+            # create one dataframe from csv file
+            activities = pd.read_csv(path)
+
+        except Exception as e:
+            print(str(e))
+            return False
+
 class SQLiteUploader(Handler):
     def __init__(self):
         super().__init__()
@@ -65,3 +83,5 @@ class CSVToGraphUploader:
     @staticmethod
     def create_node(tx, node):
         tx.run("CREATE (n:NodeLabel) SET n = $props", props=node)
+
+    
