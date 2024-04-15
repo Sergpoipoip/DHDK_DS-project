@@ -1,24 +1,35 @@
 import pandas as pd
 import sqlite3 as sq
+import urllib.parse as up
 from neo4j import GraphDatabase, Node
 
-class DatabaseHandler:
+class Handler(object):
     def __init__(self):
         self.dbPathOrUrl = ""
-
     def getDbPathOrUrl(self):
         return self.dbPathOrUrl 
-
     def setDbPathOrUrl(self, newpath):
-        if newpath.endswith(".db"):
+        if len(newpath.split('.')) and newpath.split('.')[-1] == "db":
+            self.dbPathOrUrl = newpath
+            return True
+        elif len(up.urlparse(newpath).scheme) and len(up.urlparse(newpath).netloc):
             self.dbPathOrUrl = newpath
             return True
         return False
+    
+class UploadHandler(Handler):
+    def __init__(self):
+        super().__init__()
+    def pushDataToDb(self):
+        pass
 
-class SQLiteUploader(DatabaseHandler):
+class ProcessDataUploadHandler(UploadHandler):
     def __init__(self):
         super().__init__()
 
+class SQLiteUploader(Handler):
+    def __init__(self):
+        super().__init__()
     def pushDataToDb(self, path: str):
         try:
             length_activity = 0
@@ -31,7 +42,6 @@ class SQLiteUploader(DatabaseHandler):
             return False
 
         activities = pd.read_csv(path)
-        # Insert logic to upload data to SQLite database
         return True
 
 class CSVToGraphUploader:
