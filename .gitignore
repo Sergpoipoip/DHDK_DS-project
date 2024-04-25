@@ -1,4 +1,5 @@
-meta1.csv
+*.csv
+*.json
 handler-draft.py
 example.db
 example1.db
