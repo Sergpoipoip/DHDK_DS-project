@@ -4,6 +4,7 @@ import sqlite3 as sq
 import re
 from rdflib import Graph, Namespace, URIRef, Literal, RDF
 from rdflib.plugins.stores.sparqlstore import SPARQLUpdateStore
+from sparql_dataframe import get 
 
 
 class Handler(object):
@@ -169,3 +170,116 @@ class MetaDataUploadHandler(UploadHandler):
         except Exception as e:
             print(str(e))
             return False
+
+class QueryHandler(Handler):
+    def __init__(self):
+        super().__init__()
+
+    def getById(self, Id: str):
+        db_path = self.getDbPathOrUrl()
+
+        if len(db_path.split('.')) and db_path.split('.')[-1] == "db":
+            select_acquisition = f"""
+                        SELECT *
+                        FROM acquisition
+                        WHERE objectId='{Id}'
+                    """
+            select_processing = f"""
+                        SELECT *
+                        FROM processing
+                        WHERE objectId='{Id}'
+                    """
+            select_modelling = f"""
+                        SELECT *
+                        FROM modelling
+                        WHERE objectId='{Id}'
+                    """
+            select_optimising = f"""
+                        SELECT *
+                        FROM optimising
+                        WHERE objectId='{Id}'
+                    """
+            select_exporting = f"""
+                        SELECT *
+                        FROM exporting
+                        WHERE objectId='{Id}'
+                    """
+            try:
+                with sq.connect(db_path) as con:
+                    df_acquisition = pd.read_sql(select_acquisition, con) 
+                    df_processing = pd.read_sql(select_processing, con) 
+                    df_modelling = pd.read_sql(select_modelling, con) 
+                    df_optimising = pd.read_sql(select_optimising, con)
+                    df_exporting = pd.read_sql(select_exporting, con)
+
+                    
+            except Exception as e:
+                print(f"Couldn't connect to sql database due to the following error: {e}")
+            
+            dataframes = [df_acquisition, df_processing, df_modelling, df_optimising, df_exporting]
+
+            new_first_column_name = 'activityId' # common name for the new first column
+
+            # Rename the first column of each dataframe
+            for df in dataframes:
+                df.rename(columns={df.columns[0]: new_first_column_name}, inplace=True)
+            df = pd.concat([df_acquisition, df_processing, df_modelling, df_optimising, df_exporting], ignore_index=True)
+
+        elif len(up.urlparse(db_path).scheme) and len(up.urlparse(db_path).netloc):
+            endpoint = db_path
+            
+            if ":" in Id:
+                query = """
+                        PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+
+                        SELECT ?entity ?name ?id
+                        WHERE {
+                            ?entity Attributes:id "%s" ;
+                            Attributes:name ?name ;
+                            Attributes:id ?id .
+                        }
+                        """ % Id
+            else:
+                query = """
+                        PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                        PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                        PREFIX Relations: <https://github.com/Sergpoipoip/DHDK_DS-project/relations/>
+                        PREFIX Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/>
+
+                        SELECT ?entity ?type ?date ?id ?owner ?place ?title ?author
+                        WHERE {
+                            ?entity Attributes:id  "%s";
+                            a ?type ;
+                            Attributes:id ?id ;
+                            Attributes:owner ?owner ;
+                            Attributes:place ?place ;
+                            Attributes:title ?title .
+                            OPTIONAL {
+                                ?entity Relations:author ?author .
+                            }
+                            OPTIONAL {
+                                ?entity Attributes:date ?date .
+                            }
+                        }
+                        """ % Id
+
+            try:
+                df = get(endpoint, query, True)
+
+                columns_to_process = ['entity'] if len(df.columns) == 3 else ['entity', 'type', 'author']
+
+                for column in columns_to_process:
+                    if isinstance(df[column][0], str):
+                        df[column] = df[column].apply(lambda x: x.rsplit('/', 1)[-1])
+                
+
+            except Exception as e:
+                print(f"Couldn't connect to blazegraph due to the following error: \n{e}")
+                print(f"Trying to reconnect via local connection at http://127.0.0.1:9999/blazegraph/sparql")
+                try:
+                    endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+                    df = get(endpoint, query, True)
+                except Exception as e2:
+                    print(f"Couldn't connect to blazegraph due to the following error: {e2}")
+            
+        return df.drop_duplicates()
