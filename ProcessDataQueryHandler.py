@@ -34,11 +34,16 @@ class ProcessDataQueryHandler (QueryHandler):
     def getAllActivities (self):
         try:
             with connect(self.getDbPathOrUrl()) as con:
-                query1 = "SELECT * FROM Activity"
+                query1 = "SELECT * FROM Activity" # I didn't understand what is 'Activity'? In our DB there are
+                # 5 tables called 'acquisition', 'processing', 'modelling', 'optimising', 'exporting'. So, you should write more
+                # detailed query with requests (SELECT and FROM statements) to all the 5 tables. Maybe you need to union theese
+                # 5 statements using UNION keyword. Also pay attention that there is one more column ('technique') in 'acquisition' table.
+                # The columns' names: '<name of activity>Id', 'responsible institute', 'responsible person', 'tool', 'start date',
+                # 'end date', 'objectId'
                 query1_table = pd.read_sql(query1, con)
                 return query1_table
         except:
-            pass #should we add part of code with errors?
+            pass #should we add part of code with errors? Yes, I think so
 
     def getActivitiesByResponsibleInstitution (self, partialName: str):
         try:
