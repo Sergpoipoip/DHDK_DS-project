@@ -36,36 +36,55 @@ class ProcessDataUploadHandler(UploadHandler):
             length_activity = 0
             try:
                 with sq.connect(self.getDbPathOrUrl()) as con:
-                    q1="SELECT * FROM acquisition;" 
+                    q1= "SELECT * FROM acquisition;" 
+                    q2 = "SELECT objectId FROM acquisition;"
                     q1_table = pd.read_sql(q1, con)
+                    q2_list = pd.read_sql(q2, con)['objectId'].tolist()
                     length_activity = len(q1_table)
             except:
                 pass
 
-            # create one dataframe from json file
+            # Create one dataframe from json file
             activities = pd.read_json(path)
             
-            # create 5 dataframes for each activity from activities dataframe and store them in one dictionary
+            # Create 5 dataframes for each activity from activities dataframe and store them in one dictionary
             activities_column_names = activities.columns[1:].tolist()
-            dict_of_dfs = {}
+            objectId = activities['object id'].tolist()
+            json_dataframes = {}
             for column_name in activities_column_names:
                 column = activities[column_name]
                 df = pd.DataFrame(column.tolist())
                 df = df.applymap(lambda x: None if x == '' or x == [] else x) # replace empty strings and empty lists with None
                 df = df.applymap(lambda x: ', '.join(x) if isinstance(x, list) else x) # replace lists with strings they contain
                 internalId = []
-                objectId = []
                 for idx, row in df.iterrows():
                     internalId.append(f"{column_name}-" +str(idx+length_activity))
-                    objectId.append(str(idx+1))
                 df.insert(0, f"{column_name}Id", pd.Series(internalId, dtype = "object"))
                 df.insert(len(df.columns), "objectId", pd.Series(objectId, dtype = "object"))
-                dict_of_dfs[column_name] = df
+                json_dataframes[column_name] = df
             
-            #upload 5 dataframes to database
+            # Solve data duplication problem. 5 dataframes created at this point are compared
+            # with 5 dataframes (derived from 5 tables contained in DB). Comparison are made across all columns except the first
+            # 1) Check if there are some data in DB 2) If yes, create 5 dataframes from 5 tables of DB 3) Compare 5 current dataframes
+            # with 5 DB dataframes, leave 5 dfs with unique data
+            if length_activity:
+                result_dfs = {}
+                for df_name, df_json in json_dataframes.items():
+
+                    # Perform row-wise comparison and filter out rows from df_1 that are not in df_0
+                    filtered_df_1 = df_json[~df_json['objectId'].isin(q2_list)]
+
+                    # Add the filtered dataframe to the result_dfs dictionary
+                    result_dfs[df_name] = filtered_df_1
+            
+            # Upload 5 dataframes to database
             with sq.connect(self.getDbPathOrUrl()) as con:
-                for key in dict_of_dfs.keys():
-                    dict_of_dfs[key].to_sql(f"{key}", con, if_exists="append", index=False)       
+                if length_activity:
+                    for key in result_dfs.keys():
+                        result_dfs[key].to_sql(f"{key}", con, if_exists="append", index=False)
+                else:
+                    for key in json_dataframes.keys():
+                        json_dataframes[key].to_sql(f"{key}", con, if_exists="append", index=False)       
             return True
             
 
@@ -99,77 +118,161 @@ class MetaDataUploadHandler(UploadHandler):
             # Create a dataframe based on a provided csv file
             meta_df = pd.read_csv(path, keep_default_na=False)
 
-            # Add all the persons to the graph
-            object_id_author = {}
-            ids_of_unique_authors = {}
-            author_id = 0
-
-            for _, row in meta_df.iterrows():
-                if row['Author']:
-                    pattern_id = r'\((.*?)\)' # regex pattern to match the substring within parentheses, i.e. the id part
-                    pattern_name = r'^([^()]+)'
-                    authors = [s.strip() for s in row['Author'].split(";")]
-
-                    for author_str in authors:
-                        match_id = re.search(pattern_id, author_str)
-                        match_name = re.search(pattern_name, author_str)
-
-                        if match_id and match_name:
-                            person_id = match_id.group(1)
-                            person_name = match_name.group(1).strip()
-                            object_id = row['Id']
-
-                            if person_id not in ids_of_unique_authors:
-                                subject = URIRef(ns_dict["Entities"] + f'person-{author_id}')
-                                author_id += 1
-
-                                my_graph.add((subject, RDF.type, Person))
-                                my_graph.add((subject, predicates['id'], Literal(person_id)))
-                                my_graph.add((subject, predicates['name'], Literal(person_name)))
-                                ids_of_unique_authors[person_id] = subject
-
-                            subject = ids_of_unique_authors[person_id]
-                            object_id_author.setdefault(object_id, []).append(subject)
-
-            # Add all the cultural heritage objects to the graph
-            author_id = 0
-
-            for idx, row in meta_df.iterrows():
-                subject = URIRef(ns_dict["Entities"] + f"culturalObject-{idx}")
-
-                object_type = ''.join(word.capitalize() for word in row['Type'].lower().split())
-                my_graph.add((subject, RDF.type, URIRef(ns_dict["Classes"] + object_type)))
-
-                for column in meta_df.columns:
-                    if column not in ['Type', 'Author'] and row[column]:
-                        predicate = column.lower()
-                        my_graph.add((subject, predicates[predicate], Literal(str(row[column]).strip())))
-
-                if row['Author']:
-                    author_id += 1
-                    for person in object_id_author.get(row['Id'], []):
-                        my_graph.add((subject, author, person))
-        
-
-            # Update the RDF database
-            store = SPARQLUpdateStore()
+            # Here we solve a problem with populating RDF DB that already contains some data. In order to populate it correctly
+            # with new data we need to create correct indexes of Entities:culturalObject- and Entities:person-. To do this we
+            # need to find out the total number of culturalObjects and persons already contained in the RDF DB. So, we build
+            # a SPARQL query returning a dataframe with 'personCount' and 'culturalObjectCount' columns.
             endpoint = self.getDbPathOrUrl()
 
-            store.open((endpoint, endpoint))
+            query_to_find_total_number_of_culturalObjects_and_persons = '''
+                                        PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                                        PREFIX Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/>
 
-            for triple in my_graph.triples((None, None, None)):
-                store.add(triple)
-            store.close()
+                                        SELECT 
+                                        (COUNT(DISTINCT ?person) AS ?personCount)
+                                        (COUNT(DISTINCT ?culturalObject) AS ?culturalObjectCount)
+                                        WHERE {
+                                            {
+                                                ?person a Classes:Person .
+                                                FILTER (STRSTARTS(STR(?person), str(Entities:person)))
+                                            }
+                                            UNION
+                                            {
+                                                ?culturalObject a [] .
+                                                FILTER (STRSTARTS(STR(?culturalObject), str(Entities:culturalObject)))
+                                            }
+                                        }
+                                    '''
+            df_res = get(endpoint, query_to_find_total_number_of_culturalObjects_and_persons, True)
+            print(df_res)
+            
+            ids_of_meta_df = meta_df['Id'].astype(int).tolist()
+            if all(num > df_res['culturalObjectCount'][0] for num in ids_of_meta_df):
 
-            # Serialize the RDF graph in order to make human-readable its content
-            with open('Graph_db.ttl', mode='a', encoding='utf-8') as f:
-                f.write(my_graph.serialize(format='turtle'))
+                # Solve persons duplication problem. Here we get a dataframe with all the people from a DB. Then using ids
+                # of people contained in a dataframe, we filter our list of people from meta_df so that to add to the graph
+                # and then to DB only those people who are not already in it.
 
-            return True
+                query_to_get_all_people = """
+                        PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                        PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
 
+                        SELECT ?entity ?name ?id
+                        WHERE {
+                            ?entity a Classes:Person ;
+                            Attributes:name ?name ;
+                            Attributes:id ?id .
+                        }
+                        """
+                df_with_all_people_from_db = get(endpoint, query_to_get_all_people, True)
+
+                # Create a dictionary where keys are ids of authors contained in DB and values are Entities:person-
+                index_dict = df_with_all_people_from_db.set_index('id')['entity'].to_dict()
+                
+                filter_list = sorted(list(index_dict.keys()))
+                
+                # Split the 'Author' column by ';' and expand it into separate rows
+                authors_expanded = meta_df['Author'].str.split('; ', expand=True)
+
+                rows = []
+
+                # Iterate over the columns of the expanded DataFrame
+                for col in authors_expanded.columns:
+                    # Extract the author name and ID from each column and append to the 'rows' list
+                    author_id_split = authors_expanded[col].str.split('(', expand=True)
+                    author_id_split.columns = ['Author', 'Author_ID']
+                    author_id_split['Author_ID'] = author_id_split['Author_ID'].str[:-1]
+                    rows.extend(author_id_split.values.tolist())
+
+                # Create a new DataFrame from the 'rows' list
+                new_df = pd.DataFrame(rows, columns=['Author', 'Author_ID'])
+
+                # Drop rows with NaN values
+                new_df.dropna(inplace=True)
+                new_df.drop_duplicates(ignore_index=True)
+                
+                # Create a DataFrame with all the persons from csv file that are not present in RDF DB
+                filtered_df = new_df[~new_df['Author_ID'].isin(filter_list)]
+            
+
+                # Add all the persons to the graph
+                object_id_author = {}
+                ids_of_unique_authors = {}
+                author_id = df_res['personCount'][0]
+
+                for _, row in meta_df.iterrows():
+                    if row['Author']:
+                        pattern_id = r'\((.*?)\)' # regex pattern to match the substring within parentheses, i.e. the id part
+                        pattern_name = r'^([^()]+)'
+                        authors = [s.strip() for s in row['Author'].split(";")]
+
+                        for author_str in authors:
+                            match_id = re.search(pattern_id, author_str)
+                            match_name = re.search(pattern_name, author_str)
+
+                            if match_id and match_name:
+                                person_id = match_id.group(1)
+                                person_name = match_name.group(1).strip()
+                                object_id = row['Id']
+
+                                if person_id not in ids_of_unique_authors and person_id in filtered_df['Author_ID'].tolist():
+                                    subject = URIRef(ns_dict["Entities"] + f'person-{author_id}')
+                                    author_id += 1
+
+                                    my_graph.add((subject, RDF.type, Person))
+                                    my_graph.add((subject, predicates['id'], Literal(person_id)))
+                                    my_graph.add((subject, predicates['name'], Literal(person_name)))
+                                    ids_of_unique_authors[person_id] = subject
+
+                                if person_id in list(ids_of_unique_authors.keys()):
+                                    subject = ids_of_unique_authors[person_id]
+                                else:
+                                    subject = URIRef(index_dict[person_id])
+                                object_id_author.setdefault(object_id, []).append(subject)
+                
+                # Add all the cultural heritage objects to the graph
+                author_id = 0
+                culturalObject_id = df_res['culturalObjectCount'][0]
+
+                for idx, row in meta_df.iterrows():
+                    subject = URIRef(ns_dict["Entities"] + f"culturalObject-{idx+culturalObject_id}")
+
+                    object_type = ''.join(word.capitalize() for word in row['Type'].lower().split())
+                    my_graph.add((subject, RDF.type, URIRef(ns_dict["Classes"] + object_type)))
+
+                    for column in meta_df.columns:
+                        if column not in ['Type', 'Author'] and row[column]:
+                            predicate = column.lower()
+                            my_graph.add((subject, predicates[predicate], Literal(str(row[column]).strip())))
+
+                    if row['Author']:
+                        author_id += 1
+                        for person in object_id_author.get(row['Id'], []):
+                            my_graph.add((subject, author, person))
+                
+
+                # Update the RDF database
+                store = SPARQLUpdateStore()
+                endpoint = self.getDbPathOrUrl()
+
+                store.open((endpoint, endpoint))
+
+                for triple in my_graph.triples((None, None, None)):
+                    store.add(triple)
+                store.close()
+
+                # Serialize the RDF graph in order to make human-readable its content
+                with open('Graph_db.ttl', mode='a', encoding='utf-8') as f:
+                    f.write(my_graph.serialize(format='turtle'))
+
+                return True
+            
+            else:
+                raise ValueError(f"Error: The provided CSV file contains incorrect value(s) in the 'Id' column. \nThe target graph database already contains object(s) with the specified identifier(s). \nPlease, change the 'Id' column in your CSV file so that all values in it are greater than {df_res['culturalObjectCount'][0]}.")
         except Exception as e:
             print(str(e))
             return False
+
 
 class QueryHandler(Handler):
     def __init__(self):
