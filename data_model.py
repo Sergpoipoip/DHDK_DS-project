@@ -14,12 +14,12 @@ class Person(IdentifiableEntity):
             raise ValueError("Person.name must be a string")
         self.name = name
 
-        def getName(self):
-            return self.name
+    def getName(self):
+        return self.name
 
 
 class CulturalHeritageObject(IdentifiableEntity):
-    def __init__(self, id: str, title: str, owner: str, place: str, date: str|None=None, author: Person|list[Person]|None=None):
+    def __init__(self, id: str, title: str, owner: str, place: str, date: str|None=None, authors: Person|list[Person]|None=None):
         super().__init__(id)
         if not isinstance(title, str):
             raise ValueError("CulturalHeritageObject.title must be a string")
@@ -29,35 +29,35 @@ class CulturalHeritageObject(IdentifiableEntity):
             raise ValueError("CulturalHeritageObject.place must be a string")
         if (not isinstance(date, str)) and date is not None:
             raise ValueError("CulturalHeritageObject.date must be a string or None")
-        if not isinstance(author, Person) and not isinstance(author, list) and author is not None:
+        if not isinstance(authors, Person) and not isinstance(authors, list) and authors is not None:
             raise ValueError('CulturalHeritageObject.author must be a list or a string or None')
         self.title = title
         self.owner = owner
         self.place = place
         self.date = date
-        self.author = list()
+        self.authors = list()
 
-        if type(author) == Person:
-            self.author.append(Person)
-        elif type(author) == list:
-            self.author = author
+        if type(authors) == Person:
+            self.authors.append(Person)
+        elif type(authors) == list:
+            self.authors = authors
         
-        def getTitle(self):
-            return self.title
-        
-        def getOwner(self):
-            return self.owner
-        
-        def getPlace(self):
-            return self.place
-        
-        def getDate(self):
-            if self.date:
-                return self.date
-            return None
-        
-        def getAuthors(self):
-            return self.authors
+    def getTitle(self):
+        return self.title
+    
+    def getOwner(self):
+        return self.owner
+    
+    def getPlace(self):
+        return self.place
+    
+    def getDate(self):
+        if self.date:
+            return self.date
+        return None
+    
+    def getAuthors(self):
+        return self.authors
         
 class NauticalChart(CulturalHeritageObject):
     pass
@@ -74,7 +74,7 @@ class PrintedVolume(CulturalHeritageObject):
 class PrintedMaterial(CulturalHeritageObject):
     pass
 
-class Hebrarium(CulturalHeritageObject):
+class Herbarium(CulturalHeritageObject):
     pass
 
 class Specimen(CulturalHeritageObject):
@@ -107,6 +107,9 @@ class Activity(object):
             raise ValueError("Activity.start must be a string or None")
         if not isinstance(end, str) and end is not None:
             raise ValueError("Activity.end must be a string or None")
+        
+        self.tool = []
+
         if type(tool) == str:
             self.tool.append(tool)
         elif type(tool) == list:
@@ -118,29 +121,29 @@ class Activity(object):
         self.start = start
         self.end = end
 
-        def getResponsibleInstitute(self):
-            return self.institute
-        
-        def getResponsiblePerson(self):
-            if self.person:
-                return self.person
-            return None
-        
-        def getStartDate(self):
-            if self.start:
-                return self.start
-            return None
-        
-        def getEndDate(self):
-            if self.end:
-                return self.end
-            return None
-        
-        def getTools(self):
-            return self.tool
-        
-        def refersTo(self):
-            return self.refersTo
+    def getResponsibleInstitute(self):
+        return self.institute
+    
+    def getResponsiblePerson(self):
+        if self.person:
+            return self.person
+        return None
+    
+    def getStartDate(self):
+        if self.start:
+            return self.start
+        return None
+    
+    def getEndDate(self):
+        if self.end:
+            return self.end
+        return None
+    
+    def getTools(self):
+        return self.tool
+    
+    def refersTo(self):
+        return self.refersTo
 
 class Acquisition(Activity):
     def __init__(self,
@@ -157,8 +160,8 @@ class Acquisition(Activity):
         
         self.technique = technique
         
-        def getTechnique(self):
-            return self.technique
+    def getTechnique(self):
+        return self.technique
 
 class Processing(Activity):
     pass
