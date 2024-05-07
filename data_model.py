@@ -91,14 +91,14 @@ class Map(CulturalHeritageObject):
 
 class Activity(object):
     def __init__(self,
-                 refersTo: CulturalHeritageObject,
+                 object: CulturalHeritageObject,
                  institute: str,
                  person: str|None=None,
                  start: str|None=None,
                  end: str|None=None,
                  tool: str|list[str]|None=None):
-        if not isinstance(refersTo, CulturalHeritageObject):
-            raise ValueError("Activity.refersTo must be a CulturalHeritageObject")
+        if not isinstance(object, CulturalHeritageObject):
+            raise ValueError("Activity.object must be a CulturalHeritageObject")
         if not isinstance(institute, str):
             raise ValueError("Activity.institute must be a string")
         if not isinstance(person, str) and person is not None:
@@ -115,7 +115,7 @@ class Activity(object):
         elif type(tool) == list:
             self.tool = tool
         
-        self.refersTo = refersTo
+        self.object = object
         self.institute = institute
         self.person = person
         self.start = start
@@ -143,18 +143,18 @@ class Activity(object):
         return self.tool
     
     def refersTo(self):
-        return self.refersTo
+        return self.object
 
 class Acquisition(Activity):
     def __init__(self,
-                 refersTo: CulturalHeritageObject,
+                 object: CulturalHeritageObject,
                  institute: str,
                  technique: str,
                  person: str | None = None,
                  start: str | None = None,
                  end: str | None = None,
                  tool: str | list[str] | None = None):
-        super().__init__(refersTo, institute, person, start, end, tool)
+        super().__init__(object, institute, person, start, end, tool)
         if not isinstance(technique, str):
             raise ValueError("Acquisition.technique must be a string")
         
