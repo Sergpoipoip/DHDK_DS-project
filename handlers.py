@@ -386,3 +386,320 @@ class QueryHandler(Handler):
                     print(f"Couldn't connect to blazegraph due to the following error: {e2}")
             
         return df.drop_duplicates()
+
+class ProcessDataQueryHandler(QueryHandler):
+    def __init__(self):
+        super().__init__()
+    
+    def getAllActivities(self):
+        try:
+            with sq.connect(self.getDbPathOrUrl()) as con:
+                tables = ['acquisition', 'processing', 'modelling', 'optimising', 'exporting']
+                union_query_parts = []
+                y = 'NULL AS technique'
+                x = 'technique'
+                for table in tables:
+                    union_query_parts.append(f"""
+                        SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y} 
+                        FROM {table}
+                    """)
+                query = '\nUNION ALL\n'.join(union_query_parts)
+                query_table = pd.read_sql(query, con)
+                return query_table
+        except Exception as e:
+            print("An error occurred:", e)
+    
+    def getActivitiesByResponsibleInstitution(self, partialName: str):
+        try:
+            with sq.connect(self.getDbPathOrUrl()) as con:
+                tables = ['processing', 'modelling', 'optimising', 'exporting']
+                union_query_parts = []
+                y = 'NULL AS technique'
+                x = 'technique'
+                for table in tables:
+                    union_query_parts.append(f"""
+                        SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y}
+                        FROM {table}
+                        WHERE "responsible institute" LIKE '{partialName}'
+                    """) 
+                query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
+                query_table = pd.read_sql(query, con)
+                return query_table
+        except Exception as e:
+            print("An error occurred:", e)
+    
+    def getActivitiesByResponsiblePerson(self, partialName: str):
+        try:
+            with sq.connect(self.getDbPathOrUrl()) as con:
+                tables = ['acquisition', 'processing', 'modelling', 'optimising', 'exporting']
+                union_query_parts = []
+                y = 'NULL AS technique'
+                x = 'technique'
+                for table in tables:
+                    union_query_parts.append(f"""
+                        SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y} 
+                        FROM {table}
+                        WHERE "responsible person" LIKE '{partialName}'
+                    """)
+                query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
+                query_table = pd.read_sql(query, con)
+                return query_table
+        except Exception as e:
+            print("An error occurred:", e)
+
+    def getActivitiesUsingTool(self, partialName: str):
+        try:
+            with sq.connect(self.getDbPathOrUrl()) as con:
+                tables = ['acquisition', 'processing', 'modelling', 'optimising', 'exporting']
+                union_query_parts = []
+                y = 'NULL AS technique'
+                x = 'technique'
+                for table in tables:
+                    union_query_parts.append(f"""
+                        SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y} 
+                        FROM {table}
+                        WHERE "tool" LIKE '{partialName}'
+                    """)
+                query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
+                query_table = pd.read_sql(query, con)
+                return query_table
+        except Exception as e:
+            print("An error occurred:", e)
+
+    def getActivitiesStartedAfter(self, date: str):
+        try:
+            with sq.connect(self.getDbPathOrUrl()) as con:
+                tables = ['acquisition', 'processing', 'modelling', 'optimising', 'exporting']
+                union_query_parts = []
+                y = 'NULL AS technique'
+                x = 'technique'
+                for table in tables:
+                    union_query_parts.append(f"""
+                        SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y} 
+                        FROM {table}
+                        WHERE "start date" >= '{date}'
+                    """)
+                query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
+                query_table = pd.read_sql(query, con)
+                return query_table
+        except Exception as e:
+            print ("An error occured:", e) 
+
+    def getActivitiesEndedBefore(self, date: str):
+        try:
+            with sq.connect (self.getDbPathOrUrl()) as con:
+                tables = ['acquisition', 'processing', 'modelling', 'optimising', 'exporting']
+                union_query_parts = []
+                y = 'NULL AS technique'
+                x = 'technique'
+                for table in tables:
+                    union_query_parts.append(f"""
+                        SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y} 
+                        FROM {table}
+                        WHERE "end date" <= '{date}'
+                    """)
+                query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
+                query_table = pd.read_sql(query, con)
+                return query_table
+        except Exception as e:
+            print ("An error occured:", e) 
+
+    def getAcquisitionsByTechnique(self, partialName: str):
+        try:
+            with sq.connect (self.getDbPathOrUrl()) as con:
+                query = f"""
+                SELECT *
+                FROM acquisition 
+                WHERE technique LIKE '{partialName}'
+                ORDER BY objectId
+                """
+                query_table = pd.read_sql(query, con)
+                return query_table
+        except Exception as e:
+            print ("An error occured:", e) 
+
+class MetaDataQueryHandler(QueryHandler):
+    def __init__(self):
+        super().__init__()
+    
+    def getAllPeople(self):
+        endpoint = self.getDbPathOrUrl()
+        query = """
+                        PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                        PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+
+                        SELECT ?entity ?name ?id
+                        WHERE {
+                            ?entity a Classes:Person ;
+                            Attributes:name ?name ;
+                            Attributes:id ?id .
+                        }
+                        """
+        df = get(endpoint, query, True)
+        
+        df['entity'] = df['entity'].apply(lambda x: x.rsplit('/', 1)[-1])
+        df_sorted = df.loc[df['entity'].str.extract(r'(\d+)', expand=False).astype(int).sort_values().index]
+        df_sorted.reset_index(drop=True, inplace=True)
+
+        return df_sorted
+
+    def getAllCulturalHeritageObjects(self):
+        endpoint = self.getDbPathOrUrl()
+
+        query = """
+                        PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                        PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                        PREFIX Relations: <https://github.com/Sergpoipoip/DHDK_DS-project/relations/>
+
+                        SELECT ?entity ?id ?type ?title ?date ?author ?owner ?place
+                        WHERE {
+                            ?entity a ?type ;
+                            Attributes:id ?id ;
+                            Attributes:title ?title ;
+                            Attributes:owner ?owner ;
+                            Attributes:place ?place .
+                            OPTIONAL {
+                                ?entity Relations:author ?author .
+                            }
+                            OPTIONAL {
+                                ?entity Attributes:date ?date .
+                            } 
+                        }
+                        """
+        df = get(endpoint, query, True)
+
+        columns_to_process = ['entity', 'type', 'author']
+        for column in columns_to_process:
+            df[column] = df[column].apply(lambda x: x.rsplit('/', 1)[-1] if isinstance(x, str) else x)
+        
+        df_sorted = df.loc[df['entity'].str.extract(r'(\d+)', expand=False).astype(int).sort_values().index]
+        df_sorted.reset_index(drop=True, inplace=True)
+        
+        return df_sorted
+
+    def getAuthorsOfCulturalHeritageObject(self, objectId: str):
+        endpoint = self.getDbPathOrUrl()
+
+        query = """
+                        PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                        PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                        PREFIX Relations: <https://github.com/Sergpoipoip/DHDK_DS-project/relations/>
+                        PREFIX Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/>
+
+                        SELECT ?entity ?id ?author
+                        WHERE {
+                            ?entity Attributes:id  "%s";
+                            a ?type ;
+                            Attributes:id ?id ;
+                            Attributes:owner ?owner ;
+                            Attributes:place ?place ;
+                            Attributes:title ?title .
+                            OPTIONAL {
+                                ?entity Relations:author ?author .
+                            }
+                            OPTIONAL {
+                                ?entity Attributes:date ?date .
+                            }
+                        }
+                        """ % objectId
+        df = get(endpoint, query, True)
+        columns_to_process = ['entity', 'author']
+        for column in columns_to_process:
+            df[column] = df[column].apply(lambda x: x.rsplit('/', 1)[-1] if isinstance(x, str) else x)
+
+        authors = [a for a in df['author']]
+        
+        if not pd.isna(authors[0]):
+            all_dfs = []
+            for author in authors:
+                query_1 = """
+                                PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                                PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                                PREFIX Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/>
+
+                                SELECT ?entity ?id ?name
+                                WHERE {
+                                    Entities:%s a Classes:Person ;
+                                    Attributes:id ?id ;
+                                    Attributes:name ?name ;
+                                }
+                                """ % author
+                
+                df_main = get(endpoint, query_1, True)
+                id = df_main['id'][0]
+
+                query_2 = """
+                                PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                                PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                                PREFIX Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/>
+
+                                SELECT ?entity
+                                WHERE {
+                                    ?entity a Classes:Person ;
+                                    Attributes:id "%s" ;
+                                }
+                                """ % id
+
+            
+                df_entity = get(endpoint, query_2, True)
+
+                df_main['entity'] = df_main['entity'].fillna(df_entity['entity'][0])
+                columns_to_process = ['entity', 'name']
+                for column in columns_to_process:
+                    df_main[column] = df_main[column].apply(lambda x: x.rsplit('/', 1)[-1] if isinstance(x, str) else x)
+                all_dfs.append(df_main)
+
+            resultant_df = pd.concat(all_dfs, ignore_index=True)
+
+            return resultant_df
+        else:
+            return pd.DataFrame()
+        
+    def getCulturalHeritageObjectsAuthoredBy(self, personId: str):
+        endpoint = self.getDbPathOrUrl()
+
+        query = """
+                                PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                                PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                                PREFIX Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/>
+
+                                SELECT ?entity ?id ?name
+                                WHERE {
+                                    ?entity a Classes:Person ;
+                                    Attributes:id ?id ;
+                                    Attributes:name ?name .
+                                    FILTER (?id = "%s")
+                                }
+                                """ % personId
+        
+        df_authorData_by_Id = get(endpoint, query, True)
+        person = df_authorData_by_Id['entity'][0]
+
+        query_1 = """
+                        PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
+                        PREFIX Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/>
+                        PREFIX Relations: <https://github.com/Sergpoipoip/DHDK_DS-project/relations/>
+                        PREFIX Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/>
+
+                        SELECT ?entity ?id ?type ?title ?date ?author ?owner ?place
+                        WHERE {
+                            ?entity a ?type ;
+                                Attributes:id ?id ;
+                                Attributes:owner ?owner ;
+                                Attributes:place ?place ;
+                                Attributes:title ?title ;
+                                Relations:author ?author .
+                            OPTIONAL {
+                                ?entity Attributes:date ?date .
+                            }
+                            FILTER (?author = <%s>)
+                        }
+                        """ % person
+        resultant_df = get(endpoint, query_1, True)
+
+        columns_to_process = ['entity', 'type', 'author']
+        for column in columns_to_process:
+            resultant_df[column] = resultant_df[column].apply(lambda x: x.rsplit('/', 1)[-1] if isinstance(x, str) else x)
+
+        return resultant_df
+    
