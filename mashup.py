@@ -524,9 +524,20 @@ class AdvancedMashUp(BasicMashUp):
                 ids_of_filtered_objects.add(act.refersTo().id)
         
         result_list = []
+        all_authors = []
         for id in ids_of_filtered_objects:
             authors = self.getAuthorsOfCulturalHeritageObject(id)
             if authors:
-                result_list = result_list + authors
+                all_authors = all_authors + authors
+
+        unique_ids = set()
+        # Iterate over the list in reverse order
+        for i in range(len(all_authors) - 1, -1, -1):
+            author = all_authors[i]
+            if author.id in unique_ids:
+                del all_authors[i]  # Remove duplicate author
+            else:
+                unique_ids.add(author.id)
+                result_list.append(author)
         
         return result_list
