@@ -273,7 +273,6 @@ class MetaDataUploadHandler(UploadHandler):
             print(str(e))
             return False
 
-
 class QueryHandler(Handler):
     def __init__(self):
         super().__init__()
@@ -285,27 +284,32 @@ class QueryHandler(Handler):
             select_acquisition = f"""
                         SELECT *
                         FROM acquisition
-                        WHERE objectId='{Id}'
+                        WHERE 1=1
+                        AND objectId='{Id}'
                     """
             select_processing = f"""
                         SELECT *
                         FROM processing
-                        WHERE objectId='{Id}'
+                        WHERE 1=1
+                        AND objectId='{Id}'
                     """
             select_modelling = f"""
                         SELECT *
                         FROM modelling
-                        WHERE objectId='{Id}'
+                        WHERE 1=1
+                        AND objectId='{Id}'
                     """
             select_optimising = f"""
                         SELECT *
                         FROM optimising
-                        WHERE objectId='{Id}'
+                        WHERE 1=1
+                        AND objectId='{Id}'
                     """
             select_exporting = f"""
                         SELECT *
                         FROM exporting
-                        WHERE objectId='{Id}'
+                        WHERE 1=1
+                        AND objectId='{Id}'
                     """
             try:
                 with sq.connect(db_path) as con:
@@ -317,11 +321,12 @@ class QueryHandler(Handler):
 
                     
             except Exception as e:
-                print(f"Couldn't connect to sql database due to the following error: {e}")
+                print(f"couldn't connect to sql database due to the following error: {e}")
             
             dataframes = [df_acquisition, df_processing, df_modelling, df_optimising, df_exporting]
 
-            new_first_column_name = 'activityId' # common name for the new first column
+            # Common name for the new first column
+            new_first_column_name = 'activityId'
 
             # Rename the first column of each dataframe
             for df in dataframes:
@@ -375,18 +380,18 @@ class QueryHandler(Handler):
                     if isinstance(df[column][0], str):
                         df[column] = df[column].apply(lambda x: x.rsplit('/', 1)[-1])
                 
-
             except Exception as e:
-                print(f"Couldn't connect to blazegraph due to the following error: \n{e}")
-                print(f"Trying to reconnect via local connection at http://127.0.0.1:9999/blazegraph/sparql")
+                print(f"couldn't connect to blazegraph due to the following error: \n{e}")
+                print(f"trying to reconnect via local connection at http://127.0.0.1:9999/blazegraph/sparql")
                 try:
                     endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
                     df = get(endpoint, query, True)
                 except Exception as e2:
-                    print(f"Couldn't connect to blazegraph due to the following error: {e2}")
+                    print(f"couldn't connect to blazegraph due to the following error: {e2}")
+                    return None
             
         return df.drop_duplicates()
-
+    
 class ProcessDataQueryHandler(QueryHandler):
     def __init__(self):
         super().__init__()
@@ -412,7 +417,7 @@ class ProcessDataQueryHandler(QueryHandler):
     def getActivitiesByResponsibleInstitution(self, partialName: str):
         try:
             with sq.connect(self.getDbPathOrUrl()) as con:
-                tables = ['processing', 'modelling', 'optimising', 'exporting']
+                tables = ['acquisition', 'processing', 'modelling', 'optimising', 'exporting']
                 union_query_parts = []
                 y = 'NULL AS technique'
                 x = 'technique'
@@ -420,7 +425,7 @@ class ProcessDataQueryHandler(QueryHandler):
                     union_query_parts.append(f"""
                         SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y}
                         FROM {table}
-                        WHERE "responsible institute" LIKE '{partialName}'
+                        WHERE "responsible institute" LIKE '%{partialName}%'
                     """) 
                 query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
                 query_table = pd.read_sql(query, con)
@@ -439,7 +444,7 @@ class ProcessDataQueryHandler(QueryHandler):
                     union_query_parts.append(f"""
                         SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y} 
                         FROM {table}
-                        WHERE "responsible person" LIKE '{partialName}'
+                        WHERE "responsible person" LIKE '%{partialName}%'
                     """)
                 query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
                 query_table = pd.read_sql(query, con)
@@ -458,7 +463,7 @@ class ProcessDataQueryHandler(QueryHandler):
                     union_query_parts.append(f"""
                         SELECT {table}Id AS activityId, "responsible institute", "responsible person", tool, "start date", "end date", objectId, {x if table == 'acquisition' else y} 
                         FROM {table}
-                        WHERE "tool" LIKE '{partialName}'
+                        WHERE "tool" LIKE '%{partialName}%'
                     """)
                 query = '\nUNION ALL\n'.join(union_query_parts) + 'ORDER BY objectId'
                 query_table = pd.read_sql(query, con)
@@ -510,7 +515,7 @@ class ProcessDataQueryHandler(QueryHandler):
                 query = f"""
                 SELECT *
                 FROM acquisition 
-                WHERE technique LIKE '{partialName}'
+                WHERE technique LIKE '%{partialName}%'
                 ORDER BY objectId
                 """
                 query_table = pd.read_sql(query, con)
@@ -694,6 +699,7 @@ class MetaDataQueryHandler(QueryHandler):
                             }
                             FILTER (?author = <%s>)
                         }
+                        ORDER BY ?id
                         """ % person
         resultant_df = get(endpoint, query_1, True)
 
