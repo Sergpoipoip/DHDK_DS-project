@@ -614,7 +614,7 @@ class MetaDataQueryHandler(QueryHandler):
 
         authors = [a for a in df['author']]
         
-        if not pd.isna(authors[0]):
+        if authors and not pd.isna(authors[0]):
             all_dfs = []
             for author in authors:
                 query_1 = """
@@ -678,7 +678,10 @@ class MetaDataQueryHandler(QueryHandler):
                                 """ % personId
         
         df_authorData_by_Id = get(endpoint, query, True)
-        person = df_authorData_by_Id['entity'][0]
+        if len(df_authorData_by_Id):
+            person = df_authorData_by_Id['entity'][0]
+        else:
+            return df_authorData_by_Id
 
         query_1 = """
                         PREFIX Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/>
