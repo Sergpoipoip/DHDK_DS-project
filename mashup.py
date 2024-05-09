@@ -86,7 +86,7 @@ class BasicMashUp(object):
             df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             list_of_authors = [Person(row["id"], row["name"]) for _, row in df.iterrows()]
@@ -101,7 +101,7 @@ class BasicMashUp(object):
             df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'NauticalChart': NauticalChart, 'ManuscriptPlate': ManuscriptPlate, 'ManuscriptVolume': ManuscriptVolume,
@@ -139,7 +139,7 @@ class BasicMashUp(object):
             df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             list_of_authors = [Person(row["id"], row["name"]) for _, row in df.iterrows()]
@@ -154,7 +154,7 @@ class BasicMashUp(object):
             df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'NauticalChart': NauticalChart, 'ManuscriptPlate': ManuscriptPlate, 'ManuscriptVolume': ManuscriptVolume,
@@ -193,7 +193,7 @@ class BasicMashUp(object):
             df.fillna('', inplace=True)
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
@@ -235,7 +235,7 @@ class BasicMashUp(object):
             df.fillna('', inplace=True)
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
@@ -277,7 +277,7 @@ class BasicMashUp(object):
             df.fillna('', inplace=True)
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
@@ -319,7 +319,7 @@ class BasicMashUp(object):
             df.fillna('', inplace=True)
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
@@ -361,7 +361,7 @@ class BasicMashUp(object):
             df.fillna('', inplace=True)
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
@@ -403,7 +403,7 @@ class BasicMashUp(object):
             df.fillna('', inplace=True)
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
@@ -445,7 +445,7 @@ class BasicMashUp(object):
             df.fillna('', inplace=True)
         
         if len(df) == 0:
-            return None
+            return list()
         
         else:
             dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
