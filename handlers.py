@@ -280,60 +280,10 @@ class QueryHandler(Handler):
     def getById(self, Id: str):
         db_path = self.getDbPathOrUrl()
 
-        if len(db_path.split('.')) and db_path.split('.')[-1] == "db":
-            select_acquisition = f"""
-                        SELECT *
-                        FROM acquisition
-                        WHERE 1=1
-                        AND objectId='{Id}'
-                    """
-            select_processing = f"""
-                        SELECT *
-                        FROM processing
-                        WHERE 1=1
-                        AND objectId='{Id}'
-                    """
-            select_modelling = f"""
-                        SELECT *
-                        FROM modelling
-                        WHERE 1=1
-                        AND objectId='{Id}'
-                    """
-            select_optimising = f"""
-                        SELECT *
-                        FROM optimising
-                        WHERE 1=1
-                        AND objectId='{Id}'
-                    """
-            select_exporting = f"""
-                        SELECT *
-                        FROM exporting
-                        WHERE 1=1
-                        AND objectId='{Id}'
-                    """
-            try:
-                with sq.connect(db_path) as con:
-                    df_acquisition = pd.read_sql(select_acquisition, con) 
-                    df_processing = pd.read_sql(select_processing, con) 
-                    df_modelling = pd.read_sql(select_modelling, con) 
-                    df_optimising = pd.read_sql(select_optimising, con)
-                    df_exporting = pd.read_sql(select_exporting, con)
-
-                    
-            except Exception as e:
-                print(f"couldn't connect to sql database due to the following error: {e}")
-            
-            dataframes = [df_acquisition, df_processing, df_modelling, df_optimising, df_exporting]
-
-            # Common name for the new first column
-            new_first_column_name = 'activityId'
-
-            # Rename the first column of each dataframe
-            for df in dataframes:
-                df.rename(columns={df.columns[0]: new_first_column_name}, inplace=True)
-            df = pd.concat([df_acquisition, df_processing, df_modelling, df_optimising, df_exporting], ignore_index=True)
-
-        elif len(up.urlparse(db_path).scheme) and len(up.urlparse(db_path).netloc):
+        if not len(up.urlparse(db_path).scheme) and not len(up.urlparse(db_path).netloc):
+            return pd.DataFrame()
+        
+        else:
             endpoint = db_path
             
             if ":" in Id:
@@ -374,12 +324,14 @@ class QueryHandler(Handler):
             try:
                 df = get(endpoint, query, True)
 
-                columns_to_process = ['entity'] if len(df.columns) == 3 else ['entity', 'type', 'author']
+                if len(df):
+                    columns_to_process = ['entity'] if len(df.columns) == 3 else ['entity', 'type', 'author']
 
-                for column in columns_to_process:
-                    if isinstance(df[column][0], str):
-                        df[column] = df[column].apply(lambda x: x.rsplit('/', 1)[-1])
+                    for column in columns_to_process:
+                        if isinstance(df[column][0], str):
+                            df[column] = df[column].apply(lambda x: x.rsplit('/', 1)[-1])
                 
+
             except Exception as e:
                 print(f"couldn't connect to blazegraph due to the following error: \n{e}")
                 print(f"trying to reconnect via local connection at http://127.0.0.1:9999/blazegraph/sparql")
