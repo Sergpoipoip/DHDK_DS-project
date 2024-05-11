@@ -1,6 +1,6 @@
-*.csv
-*.json
-*.ttl
+meta1.csv
+meta2.csv
+process1.json
 handler-draft.py
 example.db
 example1.db
