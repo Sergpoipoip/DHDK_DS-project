@@ -2,7 +2,7 @@ import pandas as pd
 import re
 from datetime import datetime
 from data_model import *
-from handlers import MetaDataQueryHandler, ProcessDataQueryHandler
+from handlers import MetadataQueryHandler, ProcessDataQueryHandler
 
 class BasicMashup(object):
     def __init__(self) -> None:
@@ -17,10 +17,10 @@ class BasicMashup(object):
         self.processQuery = []
         return True
 
-    def addMetadataHandler(self, handler: MetaDataQueryHandler) -> bool:
+    def addMetadataHandler(self, handler: MetadataQueryHandler) -> bool:
         try:
-            if not isinstance(handler, MetaDataQueryHandler):
-                raise TypeError("TypeError: handler must be an instance of MetaDataQueryHandler class")
+            if not isinstance(handler, MetadataQueryHandler):
+                raise TypeError("TypeError: handler must be an instance of MetadataQueryHandler class")
             
             self.metadataQuery.append(handler)
             return True
@@ -146,11 +146,11 @@ class BasicMashup(object):
             return list_of_authors
 
 
-    def getCulturalHeritageObjectsAuthoredBy(self, persondId: str) -> list[CulturalHeritageObject]:
+    def getCulturalHeritageObjectsAuthoredBy(self, personId: str) -> list[CulturalHeritageObject]:
         df = pd.DataFrame()
         
         for metaData_qh in self.metadataQuery:
-            meta_df_to_add = metaData_qh.getCulturalHeritageObjectsAuthoredBy(persondId)
+            meta_df_to_add = metaData_qh.getCulturalHeritageObjectsAuthoredBy(personId)
             df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
         
         if len(df) == 0:
