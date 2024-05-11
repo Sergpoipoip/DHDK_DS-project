@@ -92,7 +92,7 @@ class ProcessDataUploadHandler(UploadHandler):
             print(str(e))
             return False
 
-class MetaDataUploadHandler(UploadHandler):
+class MetadataUploadHandler(UploadHandler):
     def __init__(self):
         super().__init__()
     
@@ -475,7 +475,7 @@ class ProcessDataQueryHandler(QueryHandler):
         except Exception as e:
             print ("An error occured:", e) 
 
-class MetaDataQueryHandler(QueryHandler):
+class MetadataQueryHandler(QueryHandler):
     def __init__(self):
         super().__init__()
     

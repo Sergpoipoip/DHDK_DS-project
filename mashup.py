@@ -4,7 +4,7 @@ from datetime import datetime
 from data_model import *
 from handlers import MetaDataQueryHandler, ProcessDataQueryHandler
 
-class BasicMashUp(object):
+class BasicMashup(object):
     def __init__(self) -> None:
         self.metadataQuery = []
         self.processQuery = []
@@ -472,7 +472,7 @@ class BasicMashUp(object):
             
             return list_of_activities
 
-class AdvancedMashUp(BasicMashUp):
+class AdvancedMashup(BasicMashup):
     def __init__(self):
         super().__init__()
 
