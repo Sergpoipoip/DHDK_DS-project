@@ -144,7 +144,6 @@ class MetadataUploadHandler(UploadHandler):
                                         }
                                     '''
             df_res = get(endpoint, query_to_find_total_number_of_culturalObjects_and_persons, True)
-            print(df_res)
             
             ids_of_meta_df = meta_df['Id'].astype(int).tolist()
             if all(num > df_res['culturalObjectCount'][0] for num in ids_of_meta_df):
