@@ -1,0 +1,333 @@
+@prefix Attributes: <https://github.com/Sergpoipoip/DHDK_DS-project/attributes/> .
+@prefix Classes: <https://github.com/Sergpoipoip/DHDK_DS-project/classes/> .
+@prefix Entities: <https://github.com/Sergpoipoip/DHDK_DS-project/entities/> .
+@prefix Relations: <https://github.com/Sergpoipoip/DHDK_DS-project/relations/> .
+
+Entities:culturalObject-0 a Classes:NauticalChart ;
+    Attributes:date "1482" ;
+    Attributes:id "1" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Nautical chart" ;
+    Relations:author Entities:person-0 .
+
+Entities:culturalObject-1 a Classes:PrintedVolume ;
+    Attributes:date "1497" ;
+    Attributes:id "2" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "The History of Plants" ;
+    Relations:author Entities:person-1 .
+
+Entities:culturalObject-10 a Classes:Specimen ;
+    Attributes:date "1758" ;
+    Attributes:id "11" ;
+    Attributes:owner "Sistema Museale di Ateneo di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Atlantic horseshoe crab (Linnaeus, 1758)" .
+
+Entities:culturalObject-11 a Classes:Specimen ;
+    Attributes:date "1757" ;
+    Attributes:id "12" ;
+    Attributes:owner "Sistema Museale di Ateneo di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Armadillo (Linnaeus, 1757)" .
+
+Entities:culturalObject-12 a Classes:Painting ;
+    Attributes:date "1582-1585" ;
+    Attributes:id "13" ;
+    Attributes:owner "Accademia Carrara" ;
+    Attributes:place "Bergamo" ;
+    Attributes:title "Portrait of Ulisse Aldrovandi" ;
+    Relations:author Entities:person-9 .
+
+Entities:culturalObject-13 a Classes:PrintedMaterial ;
+    Attributes:date "1586" ;
+    Attributes:id "14" ;
+    Attributes:owner "Biblioteca del Dipartimento di Scienze Biologiche, Geologiche e Ambientali, Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "A highly useful compendium of plants" ;
+    Relations:author Entities:person-2 .
+
+Entities:culturalObject-14 a Classes:Map ;
+    Attributes:date "1591" ;
+    Attributes:id "15" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Map of the botanical garden in Padua" .
+
+Entities:culturalObject-15 a Classes:Map ;
+    Attributes:date "1753" ;
+    Attributes:id "16" ;
+    Attributes:owner "Orto Botanico ed Herbarium di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Map of the botanical garden in Bologna" ;
+    Relations:author Entities:person-10 .
+
+Entities:culturalObject-16 a Classes:ManuscriptVolume ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "17" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Sunflower" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-17 a Classes:Specimen ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "18" ;
+    Attributes:owner "Orto Botanico ed Herbarium di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Stavesacre" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-18 a Classes:Specimen ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "19" ;
+    Attributes:owner "Orto Botanico ed Herbarium di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Pheasant’s eye" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-19 a Classes:Specimen ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "20" ;
+    Attributes:owner "Orto Botanico ed Herbarium di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Tomato" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-2 a Classes:Herbarium ;
+    Attributes:date "1523" ;
+    Attributes:id "3" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "On Medical Material" ;
+    Relations:author Entities:person-2 .
+
+Entities:culturalObject-20 a Classes:Specimen ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "21" ;
+    Attributes:owner "Orto Botanico ed Herbarium di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Mountain everlasting" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-21 a Classes:Specimen ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "22" ;
+    Attributes:owner "Orto Botanico ed Herbarium di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Wild tulip" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-22 a Classes:Specimen ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "23" ;
+    Attributes:owner "Orto Botanico ed Herbarium di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Mountain avens" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-23 a Classes:PrintedMaterial ;
+    Attributes:date "1603" ;
+    Attributes:id "24" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Anatomy of a chicken" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-24 a Classes:ManuscriptPlate ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "25" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Chick in an eggshell" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-25 a Classes:PrintedMaterial ;
+    Attributes:date "1603" ;
+    Attributes:id "26" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Dissected swan" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-26 a Classes:ManuscriptPlate ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "27" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Human hermaphrodite" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-27 a Classes:Specimen ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "28" ;
+    Attributes:owner "Museo di Palazzo Poggi" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Sea coconut" .
+
+Entities:culturalObject-28 a Classes:Model ;
+    Attributes:date "1600-1699" ;
+    Attributes:id "29" ;
+    Attributes:owner "Museo di Storia Naturale di Verona" ;
+    Attributes:place "Verona" ;
+    Attributes:title "Basilisk" ;
+    Relations:author Entities:person-12 .
+
+Entities:culturalObject-29 a Classes:PrintedVolume ;
+    Attributes:date "1642" ;
+    Attributes:id "30" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Cyclops" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-3 a Classes:PrintedVolume ;
+    Attributes:date "1519" ;
+    Attributes:id "4" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "The Natural History" ;
+    Relations:author Entities:person-3 .
+
+Entities:culturalObject-30 a Classes:Model ;
+    Attributes:date "1700-1799" ;
+    Attributes:id "31" ;
+    Attributes:owner "Museo di Palazzo Poggi" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Table with monocular model" ;
+    Relations:author Entities:person-13 .
+
+Entities:culturalObject-31 a Classes:ManuscriptPlate ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "32" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Heads of a two-headed calf" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-32 a Classes:Specimen ;
+    Attributes:id "33" ;
+    Attributes:owner "Sistema Museale di Ateneo di Bologna" ;
+    Attributes:place "Ozzano dell'Emilia" ;
+    Attributes:title "Cattle (Linnaeus, 1758)" .
+
+Entities:culturalObject-33 a Classes:Specimen ;
+    Attributes:date "1600-1699" ;
+    Attributes:id "34" ;
+    Attributes:owner "Museo di Palazzo Poggi" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Narwhal (Linnaeus, 1758)" .
+
+Entities:culturalObject-34 a Classes:ManuscriptPlate ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "35" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Desert horned viper and vipera ammodytes" ;
+    Relations:author Entities:person-11 .
+
+Entities:culturalObject-4 a Classes:NauticalChart ;
+    Attributes:date "1500-1599" ;
+    Attributes:id "5" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Incomplete coastal profile of the American continent" ;
+    Relations:author Entities:person-4 .
+
+Entities:culturalObject-5 a Classes:NauticalChart ;
+    Attributes:date "1556" ;
+    Attributes:id "6" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Map of Cusco" ;
+    Relations:author Entities:person-5 .
+
+Entities:culturalObject-6 a Classes:PrintedVolume ;
+    Attributes:date "1530" ;
+    Attributes:id "7" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "On the New World" ;
+    Relations:author Entities:person-6 .
+
+Entities:culturalObject-7 a Classes:PrintedVolume ;
+    Attributes:date "1596" ;
+    Attributes:id "8" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Natural and Moral History of the Indies" ;
+    Relations:author Entities:person-7 .
+
+Entities:culturalObject-8 a Classes:PrintedMaterial ;
+    Attributes:date "1579" ;
+    Attributes:id "9" ;
+    Attributes:owner "BUB" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Tobacco" ;
+    Relations:author Entities:person-8 .
+
+Entities:culturalObject-9 a Classes:Specimen ;
+    Attributes:date "1758" ;
+    Attributes:id "10" ;
+    Attributes:owner "Sistema Museale di Ateneo di Bologna" ;
+    Attributes:place "Bologna" ;
+    Attributes:title "Jaguar (Linnaeus, 1758)" .
+
+Entities:person-0 a Classes:Person ;
+    Attributes:id "ULAN:500114874" ;
+    Attributes:name "Benincasa, Grazioso" .
+
+Entities:person-1 a Classes:Person ;
+    Attributes:id "VIAF:265397758" ;
+    Attributes:name "Teofrasto" .
+
+Entities:person-10 a Classes:Person ;
+    Attributes:id "VIAF:54929912" ;
+    Attributes:name "Monti, Giuseppe" .
+
+Entities:person-12 a Classes:Person ;
+    Attributes:id "VIAF:52741381" ;
+    Attributes:name "Calzolari, Francesco" .
+
+Entities:person-13 a Classes:Person ;
+    Attributes:id "VIAF:263904234" ;
+    Attributes:name "Riviera, Tarsizio" .
+
+Entities:person-3 a Classes:Person ;
+    Attributes:id "VIAF:100219162" ;
+    Attributes:name "Plinius Secundus, Gaius" .
+
+Entities:person-4 a Classes:Person ;
+    Attributes:id "ULAN:500048088" ;
+    Attributes:name "Agnese, Battista" .
+
+Entities:person-5 a Classes:Person ;
+    Attributes:id "VIAF:68943129" ;
+    Attributes:name "Ramusio, Giovanni Battista" .
+
+Entities:person-6 a Classes:Person ;
+    Attributes:id "VIAF:68967770" ;
+    Attributes:name "Anghiera, Pietro Martire d'" .
+
+Entities:person-7 a Classes:Person ;
+    Attributes:id "VIAF:2465365" ;
+    Attributes:name "Acosta, José de" .
+
+Entities:person-8 a Classes:Person ;
+    Attributes:id "VIAF:100203985" ;
+    Attributes:name "Monardes, Nicolás" .
+
+Entities:person-9 a Classes:Person ;
+    Attributes:id "ULAN:500115349" ;
+    Attributes:name "Carracci, Agostino" .
+
+Entities:person-2 a Classes:Person ;
+    Attributes:id "VIAF:78822798" ;
+    Attributes:name "Dioscorides Pedanius" .
+
+Entities:person-11 a Classes:Person ;
+    Attributes:id "VIAF:100190422" ;
+    Attributes:name "Aldrovandi, Ulisse" .
+
