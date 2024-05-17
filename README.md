@@ -7,4 +7,4 @@ Members: [Sergei Slinkin
 (https://github.com/parkful)
 [Alisa Antonova] 
 (https://github.com/Alice-Ant) 
-Data Science project 23/24
+Data Science project 23/24.
