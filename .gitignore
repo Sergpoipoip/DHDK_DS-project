@@ -5,3 +5,6 @@ handler-draft.py
 example.db
 example1.db
 tests_1.py
+__pycache__
+blazegraph.jnl
+rules.log
