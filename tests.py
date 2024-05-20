@@ -1,7 +1,7 @@
 from os import sep
-from handlers import MetadataUploadHandler, ProcessDataUploadHandler
-from handlers import QueryHandler, MetadataQueryHandler, ProcessDataQueryHandler
-from mashup import BasicMashup, AdvancedMashup
+from impl import MetadataUploadHandler, ProcessDataUploadHandler
+from impl import QueryHandler, MetadataQueryHandler, ProcessDataQueryHandler
+from impl import BasicMashup, AdvancedMashup
 
 # Launch ProcessDataUploadHandler() Class
 process = ProcessDataUploadHandler()

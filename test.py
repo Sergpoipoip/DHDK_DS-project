@@ -15,9 +15,9 @@
 import unittest
 from os import sep
 from pandas import DataFrame
-from handlers import MetadataUploadHandler, ProcessDataUploadHandler, MetadataQueryHandler, ProcessDataQueryHandler
-from mashup import AdvancedMashup
-from data_model import Person, CulturalHeritageObject, Activity, Acquisition
+from impl import MetadataUploadHandler, ProcessDataUploadHandler, MetadataQueryHandler, ProcessDataQueryHandler
+from impl import AdvancedMashup
+from impl import Person, CulturalHeritageObject, Activity, Acquisition
 
 # REMEMBER: before launching the tests, please run the Blazegraph instance!
 
