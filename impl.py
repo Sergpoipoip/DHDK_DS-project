@@ -2,10 +2,191 @@ import pandas as pd
 import urllib.parse as up
 import sqlite3 as sq
 import re
+from datetime import datetime
 from rdflib import Graph, Namespace, URIRef, Literal, RDF
 from rdflib.plugins.stores.sparqlstore import SPARQLUpdateStore
-from sparql_dataframe import get 
+from sparql_dataframe import get
 
+# DATA-MODEL
+
+class IdentifiableEntity(object):
+    def __init__(self, id:str):
+        if not isinstance(id, str):
+            raise ValueError("IdentifiableEntity.id must be a string")
+        self.id = id
+
+    def getId(self):
+        return self.id
+
+class Person(IdentifiableEntity):
+    def __init__(self, id: str, name: str):
+        super().__init__(id)
+        if not isinstance(name, str):
+            raise ValueError("Person.name must be a string")
+        self.name = name
+
+    def getName(self):
+        return self.name
+
+
+class CulturalHeritageObject(IdentifiableEntity):
+    def __init__(self, id: str, title: str, owner: str, place: str, date: str|None=None, authors: Person|list[Person]|None=None):
+        super().__init__(id)
+        if not isinstance(title, str):
+            raise ValueError("CulturalHeritageObject.title must be a string")
+        if not isinstance(owner, str):
+            raise ValueError("CulturalHeritageObject.owner must be a string")
+        if not isinstance(place, str):
+            raise ValueError("CulturalHeritageObject.place must be a string")
+        if (not isinstance(date, str)) and date is not None:
+            raise ValueError("CulturalHeritageObject.date must be a string or None")
+        if not isinstance(authors, Person) and not isinstance(authors, list) and authors is not None:
+            raise ValueError('CulturalHeritageObject.author must be a list or a string or None')
+        self.title = title
+        self.owner = owner
+        self.place = place
+        self.date = date
+        self.authors = list()
+
+        if type(authors) == Person:
+            self.authors.append(Person)
+        elif type(authors) == list:
+            self.authors = authors
+        
+    def getTitle(self):
+        return self.title
+    
+    def getOwner(self):
+        return self.owner
+    
+    def getPlace(self):
+        return self.place
+    
+    def getDate(self):
+        if self.date:
+            return self.date
+        return None
+    
+    def getAuthors(self):
+        return self.authors
+        
+class NauticalChart(CulturalHeritageObject):
+    pass
+
+class ManuscriptPlate(CulturalHeritageObject):
+    pass
+
+class ManuscriptVolume(CulturalHeritageObject):
+    pass
+
+class PrintedVolume(CulturalHeritageObject):
+    pass
+
+class PrintedMaterial(CulturalHeritageObject):
+    pass
+
+class Herbarium(CulturalHeritageObject):
+    pass
+
+class Specimen(CulturalHeritageObject):
+    pass
+
+class Painting(CulturalHeritageObject):
+    pass
+
+class Model(CulturalHeritageObject):
+    pass
+
+class Map(CulturalHeritageObject):
+    pass
+
+class Activity(object):
+    def __init__(self,
+                 object: CulturalHeritageObject,
+                 institute: str,
+                 person: str|None=None,
+                 start: str|None=None,
+                 end: str|None=None,
+                 tool: str|list[str]|None=None):
+        if not isinstance(object, CulturalHeritageObject):
+            raise ValueError("Activity.object must be a CulturalHeritageObject")
+        if not isinstance(institute, str):
+            raise ValueError("Activity.institute must be a string")
+        if not isinstance(person, str) and person is not None:
+            raise ValueError("Activity.person must be a string or None")
+        if not isinstance(start, str) and start is not None:
+            raise ValueError("Activity.start must be a string or None")
+        if not isinstance(end, str) and end is not None:
+            raise ValueError("Activity.end must be a string or None")
+        
+        self.tool = []
+
+        if type(tool) == str:
+            self.tool.append(tool)
+        elif type(tool) == list:
+            self.tool = tool
+        
+        self.object = object
+        self.institute = institute
+        self.person = person
+        self.start = start
+        self.end = end
+
+    def getResponsibleInstitute(self):
+        return self.institute
+    
+    def getResponsiblePerson(self):
+        if self.person:
+            return self.person
+        return None
+    
+    def getStartDate(self):
+        if self.start:
+            return self.start
+        return None
+    
+    def getEndDate(self):
+        if self.end:
+            return self.end
+        return None
+    
+    def getTools(self):
+        return self.tool
+    
+    def refersTo(self):
+        return self.object
+
+class Acquisition(Activity):
+    def __init__(self,
+                 object: CulturalHeritageObject,
+                 institute: str,
+                 technique: str,
+                 person: str | None = None,
+                 start: str | None = None,
+                 end: str | None = None,
+                 tool: str | list[str] | None = None):
+        super().__init__(object, institute, person, start, end, tool)
+        if not isinstance(technique, str):
+            raise ValueError("Acquisition.technique must be a string")
+        
+        self.technique = technique
+        
+    def getTechnique(self):
+        return self.technique
+
+class Processing(Activity):
+    pass
+
+class Modelling(Activity):
+    pass
+
+class Optimising(Activity):
+    pass
+
+class Exporting(Activity):
+    pass
+ 
+# HANDLERS
 
 class Handler(object):
     def __init__(self):
@@ -662,4 +843,541 @@ class MetadataQueryHandler(QueryHandler):
             resultant_df[column] = resultant_df[column].apply(lambda x: x.rsplit('/', 1)[-1] if isinstance(x, str) else x)
 
         return resultant_df
+
+class BasicMashup(object):
+    def __init__(self) -> None:
+        self.metadataQuery = []
+        self.processQuery = []
     
+    def cleanMetadataHandlers(self) -> bool:
+        self.metadataQuery = []
+        return True
+
+    def cleanProcessHandlers(self) -> bool:
+        self.processQuery = []
+        return True
+
+    def addMetadataHandler(self, handler: MetadataQueryHandler) -> bool:
+        try:
+            if not isinstance(handler, MetadataQueryHandler):
+                raise TypeError("TypeError: handler must be an instance of MetadataQueryHandler class")
+            
+            self.metadataQuery.append(handler)
+            return True
+        except TypeError as e:
+            print(e)
+            return False
+
+    def addProcessHandler(self, handler:ProcessDataQueryHandler) -> bool:
+        try:
+            if not isinstance(handler, ProcessDataQueryHandler):
+                raise TypeError("TypeError: handler must be an instance of ProcessDataQueryHandler class")
+            
+            self.processQuery.append(handler)
+            return True
+        except TypeError as e:
+            print(e)
+            return False
+
+    def getEntityById(self, id: str) -> IdentifiableEntity | None:
+        df = pd.DataFrame()
+        
+        for metaData_qh in self.metadataQuery:
+            meta_df_to_add = metaData_qh.getById(id)
+            df = pd.concat([df, meta_df_to_add], ignore_index=True)
+        
+        if len(df) == 0:
+            return None
+        
+        else:
+            if ":" in id:
+                result_person = Person(id, df.loc[0]["name"])
+                return result_person
+            else:
+                dict_of_classes = {'NauticalChart': NauticalChart, 'ManuscriptPlate': ManuscriptPlate, 'ManuscriptVolume': ManuscriptVolume,
+                                   'PrintedVolume': PrintedVolume, 'PrintedMaterial': PrintedMaterial, 'Herbarium': Herbarium,
+                                   'Specimen': Specimen, 'Painting': Painting, 'Model': Model, 'Map': Map}
+                list_of_authors = []
+                authors = metaData_qh.getAuthorsOfCulturalHeritageObject(id)
+                list_of_authors = [Person(row["id"], row["name"]) for _, row in authors.iterrows()]
+                
+                obj_title = df.loc[0]["title"]
+                obj_date = str(df.loc[0]["date"]) if df.loc[0]["date"] != "" else None
+                obj_authors = list_of_authors
+                obj_owner = df.loc[0]["owner"]
+                obj_place = df.loc[0]["place"]
+                obj_type = df.loc[0]["type"]
+                
+                result_object = dict_of_classes[obj_type](id, obj_title,
+                        obj_owner,
+                        obj_place,
+                        obj_date,
+                        obj_authors)
+                
+                return result_object
+
+
+
+    def getAllPeople(self) -> list[Person]:
+        df = pd.DataFrame()
+        
+        for metaData_qh in self.metadataQuery:
+            meta_df_to_add = metaData_qh.getAllPeople()
+            df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            list_of_authors = [Person(row["id"], row["name"]) for _, row in df.iterrows()]
+            
+            return list_of_authors
+
+    def getAllCulturalHeritageObjects(self) -> list[CulturalHeritageObject]:
+        df = pd.DataFrame()
+        
+        for metaData_qh in self.metadataQuery:
+            meta_df_to_add = metaData_qh.getAllCulturalHeritageObjects()
+            df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'NauticalChart': NauticalChart, 'ManuscriptPlate': ManuscriptPlate, 'ManuscriptVolume': ManuscriptVolume,
+                                   'PrintedVolume': PrintedVolume, 'PrintedMaterial': PrintedMaterial, 'Herbarium': Herbarium,
+                                   'Specimen': Specimen, 'Painting': Painting, 'Model': Model, 'Map': Map}
+            df.drop_duplicates(subset='id', inplace=True, ignore_index=True) 
+            list_of_objects = []
+            for i, row in df.iterrows():
+                authors_df = metaData_qh.getAuthorsOfCulturalHeritageObject(row['id'])
+                list_of_authors = [Person(row1["id"], row1["name"]) for _, row1 in authors_df.iterrows()]
+
+                obj_id = str(df.loc[i]["id"])
+                obj_title = df.loc[i]["title"]
+                obj_date = str(df.loc[i]["date"]) if df.loc[i]["date"] != "" else None
+                obj_authors = list_of_authors
+                obj_owner = df.loc[i]["owner"]
+                obj_place = df.loc[i]["place"]
+                obj_type = df.loc[i]["type"]
+                
+                result_object = dict_of_classes[obj_type](obj_id, obj_title,
+                        obj_owner,
+                        obj_place,
+                        obj_date,
+                        obj_authors)
+                
+                list_of_objects.append(result_object)
+            
+            return list_of_objects
+
+    def getAuthorsOfCulturalHeritageObject(self, objectId: str) -> list[Person]:
+        df = pd.DataFrame()
+        
+        for metaData_qh in self.metadataQuery:
+            meta_df_to_add = metaData_qh.getAuthorsOfCulturalHeritageObject(objectId)
+            df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            list_of_authors = [Person(row["id"], row["name"]) for _, row in df.iterrows()]
+            return list_of_authors
+
+
+    def getCulturalHeritageObjectsAuthoredBy(self, personId: str) -> list[CulturalHeritageObject]:
+        df = pd.DataFrame()
+        
+        for metaData_qh in self.metadataQuery:
+            meta_df_to_add = metaData_qh.getCulturalHeritageObjectsAuthoredBy(personId)
+            df = pd.concat([df, meta_df_to_add], ignore_index=True).drop_duplicates()
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'NauticalChart': NauticalChart, 'ManuscriptPlate': ManuscriptPlate, 'ManuscriptVolume': ManuscriptVolume,
+                                   'PrintedVolume': PrintedVolume, 'PrintedMaterial': PrintedMaterial, 'Herbarium': Herbarium,
+                                   'Specimen': Specimen, 'Painting': Painting, 'Model': Model, 'Map': Map}
+            df.drop_duplicates(subset='id', inplace=True, ignore_index=True) 
+            list_of_objects = []
+            for i, row in df.iterrows():
+                authors_df = metaData_qh.getAuthorsOfCulturalHeritageObject(row['id'])
+                list_of_authors = [Person(row1["id"], row1["name"]) for _, row1 in authors_df.iterrows()]
+
+                obj_id = str(df.loc[i]["id"])
+                obj_title = df.loc[i]["title"]
+                obj_date = str(df.loc[i]["date"]) if df.loc[i]["date"] != "" else None
+                obj_authors = list_of_authors
+                obj_owner = df.loc[i]["owner"]
+                obj_place = df.loc[i]["place"]
+                obj_type = df.loc[i]["type"]
+                
+                result_object = dict_of_classes[obj_type](obj_id, obj_title,
+                        obj_owner,
+                        obj_place,
+                        obj_date,
+                        obj_authors)
+                
+                list_of_objects.append(result_object)
+            
+            return list_of_objects
+
+    def getAllActivities(self) -> list[Activity]:
+        df = pd.DataFrame()
+        
+        for process_qh in self.processQuery:
+            process_df_to_add = process_qh.getAllActivities()
+            df = pd.concat([df, process_df_to_add], ignore_index=True).drop_duplicates()
+            df.fillna('', inplace=True)
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
+                                   'optimising': Optimising, 'exporting': Exporting}
+            list_of_activities = []
+            for i, row in df.iterrows():
+
+                act_refersTo = self.getEntityById(str(df.loc[i]["objectId"]))
+                act_institute = df.loc[i]["responsible institute"]
+                act_person = df.loc[i]["responsible person"]
+                act_start = df.loc[i]["start date"]
+                act_end = df.loc[i]["end date"]
+                act_tool = df.loc[i]["tool"]
+                match_type = re.search(r'^[^-]*', df.loc[i]["activityId"])
+                act_type = match_type.group(0)
+                
+                if dict_of_classes[act_type] == Acquisition:
+                    act_technique = df.loc[i]["technique"]
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_technique, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                else:
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                
+                list_of_activities.append(result_activity)
+            
+            return list_of_activities
+
+    def getActivitiesByResponsibleInstitution(self, partialName: str) -> list[Activity]:
+        df = pd.DataFrame()
+        
+        for process_qh in self.processQuery:
+            process_df_to_add = process_qh.getActivitiesByResponsibleInstitution(partialName)
+            df = pd.concat([df, process_df_to_add], ignore_index=True).drop_duplicates()
+            df.fillna('', inplace=True)
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
+                                   'optimising': Optimising, 'exporting': Exporting}
+            list_of_activities = []
+            for i, row in df.iterrows():
+
+                act_refersTo = self.getEntityById(str(df.loc[i]["objectId"]))
+                act_institute = df.loc[i]["responsible institute"]
+                act_person = df.loc[i]["responsible person"]
+                act_start = df.loc[i]["start date"]
+                act_end = df.loc[i]["end date"]
+                act_tool = df.loc[i]["tool"]
+                match_type = re.search(r'^[^-]*', df.loc[i]["activityId"])
+                act_type = match_type.group(0)
+                
+                if dict_of_classes[act_type] == Acquisition:
+                    act_technique = df.loc[i]["technique"]
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_technique, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                else:
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                
+                list_of_activities.append(result_activity)
+            
+            return list_of_activities
+
+    def getActivitiesByResponsiblePerson(self, partialName: str) -> list[Activity]:
+        df = pd.DataFrame()
+        
+        for process_qh in self.processQuery:
+            process_df_to_add = process_qh.getActivitiesByResponsiblePerson(partialName)
+            df = pd.concat([df, process_df_to_add], ignore_index=True).drop_duplicates()
+            df.fillna('', inplace=True)
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
+                                   'optimising': Optimising, 'exporting': Exporting}
+            list_of_activities = []
+            for i, row in df.iterrows():
+
+                act_refersTo = self.getEntityById(str(df.loc[i]["objectId"]))
+                act_institute = df.loc[i]["responsible institute"]
+                act_person = df.loc[i]["responsible person"]
+                act_start = df.loc[i]["start date"]
+                act_end = df.loc[i]["end date"]
+                act_tool = df.loc[i]["tool"]
+                match_type = re.search(r'^[^-]*', df.loc[i]["activityId"])
+                act_type = match_type.group(0)
+                
+                if dict_of_classes[act_type] == Acquisition:
+                    act_technique = df.loc[i]["technique"]
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_technique, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                else:
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                
+                list_of_activities.append(result_activity)
+            
+            return list_of_activities
+
+    def getActivitiesUsingTool(self, partialName: str) -> list[Activity]:
+        df = pd.DataFrame()
+        
+        for process_qh in self.processQuery:
+            process_df_to_add = process_qh.getActivitiesUsingTool(partialName)
+            df = pd.concat([df, process_df_to_add], ignore_index=True).drop_duplicates()
+            df.fillna('', inplace=True)
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
+                                   'optimising': Optimising, 'exporting': Exporting}
+            list_of_activities = []
+            for i, row in df.iterrows():
+
+                act_refersTo = self.getEntityById(str(df.loc[i]["objectId"]))
+                act_institute = df.loc[i]["responsible institute"]
+                act_person = df.loc[i]["responsible person"]
+                act_start = df.loc[i]["start date"]
+                act_end = df.loc[i]["end date"]
+                act_tool = df.loc[i]["tool"]
+                match_type = re.search(r'^[^-]*', df.loc[i]["activityId"])
+                act_type = match_type.group(0)
+                
+                if dict_of_classes[act_type] == Acquisition:
+                    act_technique = df.loc[i]["technique"]
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_technique, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                else:
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                
+                list_of_activities.append(result_activity)
+            
+            return list_of_activities
+
+    def getActivitiesStartedAfter(self, date: str) -> list[Activity]:
+        df = pd.DataFrame()
+        
+        for process_qh in self.processQuery:
+            process_df_to_add = process_qh.getActivitiesStartedAfter(date)
+            df = pd.concat([df, process_df_to_add], ignore_index=True).drop_duplicates()
+            df.fillna('', inplace=True)
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
+                                   'optimising': Optimising, 'exporting': Exporting}
+            list_of_activities = []
+            for i, row in df.iterrows():
+
+                act_refersTo = self.getEntityById(str(df.loc[i]["objectId"]))
+                act_institute = df.loc[i]["responsible institute"]
+                act_person = df.loc[i]["responsible person"]
+                act_start = df.loc[i]["start date"]
+                act_end = df.loc[i]["end date"]
+                act_tool = df.loc[i]["tool"]
+                match_type = re.search(r'^[^-]*', df.loc[i]["activityId"])
+                act_type = match_type.group(0)
+                
+                if dict_of_classes[act_type] == Acquisition:
+                    act_technique = df.loc[i]["technique"]
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_technique, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                else:
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                
+                list_of_activities.append(result_activity)
+            
+            return list_of_activities
+
+    def getActivitiesEndedBefore(self, date: str) -> list[Activity]:
+        df = pd.DataFrame()
+        
+        for process_qh in self.processQuery:
+            process_df_to_add = process_qh.getActivitiesEndedBefore(date)
+            df = pd.concat([df, process_df_to_add], ignore_index=True).drop_duplicates()
+            df.fillna('', inplace=True)
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
+                                   'optimising': Optimising, 'exporting': Exporting}
+            list_of_activities = []
+            for i, row in df.iterrows():
+
+                act_refersTo = self.getEntityById(str(df.loc[i]["objectId"]))
+                act_institute = df.loc[i]["responsible institute"]
+                act_person = df.loc[i]["responsible person"]
+                act_start = df.loc[i]["start date"]
+                act_end = df.loc[i]["end date"]
+                act_tool = df.loc[i]["tool"]
+                match_type = re.search(r'^[^-]*', df.loc[i]["activityId"])
+                act_type = match_type.group(0)
+                
+                if dict_of_classes[act_type] == Acquisition:
+                    act_technique = df.loc[i]["technique"]
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_technique, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                else:
+                    result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_person,
+                            act_start,
+                            act_end,
+                            act_tool)
+                
+                list_of_activities.append(result_activity)
+            
+            return list_of_activities
+
+    def getAcquisitionsByTechnique(self, partialName: str) -> list[Acquisition]:
+        df = pd.DataFrame()
+        
+        for process_qh in self.processQuery:
+            process_df_to_add = process_qh.getAcquisitionsByTechnique(partialName)
+            df = pd.concat([df, process_df_to_add], ignore_index=True).drop_duplicates()
+            df.fillna('', inplace=True)
+        
+        if len(df) == 0:
+            return list()
+        
+        else:
+            dict_of_classes = {'acquisition': Acquisition, 'processing': Processing, 'modelling': Modelling,
+                                   'optimising': Optimising, 'exporting': Exporting}
+            list_of_activities = []
+            for i, row in df.iterrows():
+
+                act_refersTo = self.getEntityById(str(df.loc[i]["objectId"]))
+                act_institute = df.loc[i]["responsible institute"]
+                act_person = df.loc[i]["responsible person"]
+                act_start = df.loc[i]["start date"]
+                act_end = df.loc[i]["end date"]
+                act_tool = df.loc[i]["tool"]
+                match_type = re.search(r'^[^-]*', df.loc[i]["acquisitionId"])
+                act_type = match_type.group(0)
+                
+                act_technique = df.loc[i]["technique"]
+                result_activity = dict_of_classes[act_type](act_refersTo, act_institute, act_technique, act_person,
+                        act_start,
+                        act_end,
+                        act_tool)
+                
+                list_of_activities.append(result_activity)
+            
+            return list_of_activities
+
+class AdvancedMashup(BasicMashup):
+    def __init__(self):
+        super().__init__()
+
+    def getActivitiesOnObjectsAuthoredBy(self, personId: str) -> list[Activity]:
+        
+        list_of_objects = self.getCulturalHeritageObjectsAuthoredBy(personId)
+        all_activities = self.getAllActivities()
+    
+        object_ids = {obj.getId() for obj in list_of_objects}
+        activities = [act for act in all_activities if act.refersTo().id in object_ids]
+        
+        return activities
+
+
+    def getObjectsHandledByResponsiblePerson(self, partialName: str) -> list[CulturalHeritageObject]:
+        
+        activites = self.getActivitiesByResponsiblePerson(partialName)
+        objects = []
+
+        for act in activites:
+            object = act.refersTo()
+            if object.id not in [obj.id for obj in objects]:
+                objects.append(object)
+
+        return objects
+
+
+    def getObjectsHandledByResponsibleInstitution(self, partialName: str) -> list[CulturalHeritageObject]:
+        
+        activites = self.getActivitiesByResponsibleInstitution(partialName)
+        objects = []
+
+        for act in activites:
+            object = act.refersTo()
+            if object.id not in [obj.id for obj in objects]:
+                objects.append(object)
+
+        return objects
+
+    def getAuthorsOfObjectsAcquiredInTimeFrame(self, start: str, end: str) -> list[Person]:
+        
+        activities_after = self.getActivitiesStartedAfter(start)
+        filtered_activities_after = [activity for activity in activities_after if isinstance(activity, Acquisition)]
+
+        ids_of_filtered_objects = set()
+        for act in filtered_activities_after:
+            date = datetime.strptime(act.end, '%Y-%m-%d')
+            if date <= datetime.strptime(end, '%Y-%m-%d'):
+                ids_of_filtered_objects.add(act.refersTo().id)
+        
+        result_list = []
+        all_authors = []
+        for id in ids_of_filtered_objects:
+            authors = self.getAuthorsOfCulturalHeritageObject(id)
+            if authors:
+                all_authors = all_authors + authors
+
+        unique_ids = set()
+        # Iterate over the list in reverse order
+        for i in range(len(all_authors) - 1, -1, -1):
+            author = all_authors[i]
+            if author.id in unique_ids:
+                del all_authors[i]  # Remove duplicate author
+            else:
+                unique_ids.add(author.id)
+                result_list.append(author)
+        
+        return result_list
