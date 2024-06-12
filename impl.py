@@ -1214,7 +1214,7 @@ class BasicMashup(object):
                 act_person = df.loc[i]["responsible person"]
                 act_start = df.loc[i]["start date"]
                 act_end = df.loc[i]["end date"]
-                act_tool = df.loc[i]["tool"]
+                act_tool = df.loc[i]["tool"].split(", ")
                 match_type = re.search(r'^[^-]*', df.loc[i]["activityId"])
                 act_type = match_type.group(0)
                 
